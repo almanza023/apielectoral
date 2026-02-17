@@ -122,13 +122,17 @@ class TokenCache:
         self._keep_filling = False
 
 class RegistraduriaScraperAuto:
-    def __init__(self, captcha_api_key, check_balance=True, token_ttl=90, enable_token_pool=True):
+    def __init__(self, captcha_api_key, check_balance=True, token_ttl=90, enable_token_pool=True, proxy_list=None):
         self.captcha_solver = TwoCaptchaSolver(captcha_api_key)
         self.session = requests.Session()
         self.base_url = "https://eleccionescolombia.registraduria.gov.co/identificacion"
         self.api_url = "https://apiweb-eleccionescolombia.infovotantes.com/api/v1/citizen/get-information"
         self.cached_site_key = "6Lc9DmgrAAAAAJAjWVhjDy1KSgqzqJikY5z7I9SV"
         self.cached_form_data = None
+        
+        # Sistema de proxies para evitar bloqueos de IP
+        self.proxy_list = [p.strip() for p in proxy_list] if proxy_list else []
+        self.proxy_index = 0
         
         # Sistema de caché de tokens
         self.cached_token = None
@@ -181,6 +185,22 @@ class RegistraduriaScraperAuto:
             print(f"⚡ Token en caché válido (edad: {age:.1f}s / {self.token_ttl - age:.1f}s restantes)")
         
         return is_valid
+    
+    def get_next_proxy(self):
+        """Retorna el siguiente proxy en la rotación, o None si no hay proxies"""
+        if not self.proxy_list:
+            return None
+        
+        proxy = self.proxy_list[self.proxy_index]
+        self.proxy_index = (self.proxy_index + 1) % len(self.proxy_list)
+        
+        proxy_dict = {
+            'http': proxy,
+            'https': proxy
+        }
+        
+        print(f"🌐 Usando proxy: {proxy} ({self.proxy_index}/{len(self.proxy_list)})")
+        return proxy_dict
     
     def wait_for_pool_ready(self, timeout=40):
         """Espera a que el pool tenga al menos 1 token disponible"""
@@ -267,11 +287,15 @@ class RegistraduriaScraperAuto:
                 'Priority': 'u=1, i'
             })
             
+            # Obtener proxy si está disponible
+            proxies = self.get_next_proxy()
+            
             response = self.session.post(
                 self.api_url,
                 json=post_data,
                 headers=headers,
-                timeout=10
+                timeout=10,
+                proxies=proxies
             )
             
             response.raise_for_status()

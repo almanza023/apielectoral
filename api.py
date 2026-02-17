@@ -292,7 +292,7 @@ async def get_registraduria_data(request: PeticionRequest):
     
     try:
         # Crear scraper sin verificar balance (más rápido)
-        scraper = RegistraduriaScraperAuto(API_KEY, check_balance=False)
+        scraper = RegistraduriaScraperAuto(API_KEY, check_balance=False, proxy_list=settings.PROXY_LIST if settings.PROXY_ENABLED else None)
         
         try:
 
@@ -557,7 +557,7 @@ async def process_single_nuip(
             scraper_registraduria = None
             try:
                 print(f"🗳️ Consultando puesto de votación para {nuip}...")
-                scraper_registraduria = RegistraduriaScraperAuto(API_KEY)
+                scraper_registraduria = RegistraduriaScraperAuto(API_KEY, proxy_list=settings.PROXY_LIST if settings.PROXY_ENABLED else None)
                 
                 # Usar asyncio.wait_for para timeout de 120 segundos
                 voting_result = await asyncio.wait_for(

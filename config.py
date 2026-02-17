@@ -9,6 +9,11 @@ class Settings:
     DEFAULT_DELAY = 5
     HEADLESS_MODE = True
     
+    # Configuración de proxies para evitar bloqueos de IP
+    PROXY_ENABLED = os.getenv('PROXY_ENABLED', 'false').lower() == 'true'
+    PROXY_LIST = os.getenv('PROXY_LIST', '').split(',') if os.getenv('PROXY_LIST') else []
+    # Formato: "http://ip:puerto" o "http://usuario:contraseña@ip:puerto"
+    
     # Configuración de la API
     API_TITLE = "API Consulta Información Electoral"
     API_VERSION = "1.0.0"
