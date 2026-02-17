@@ -295,8 +295,18 @@ async def get_registraduria_data(request: PeticionRequest):
         scraper = RegistraduriaScraperAuto(API_KEY, check_balance=False)
         
         try:
+
             result = scraper.scrape_nuip(request.nuip)
-            
+
+            # Imprimir el JSON completo del puesto de votación si existe
+            if result.get("status") == "success":
+                data_records = result.get("data", [])
+                if data_records and len(data_records) > 0:
+                    import json
+                    print("\n===== JSON DE PUESTO DE VOTACIÓN =====")
+                    print(json.dumps(data_records[0], indent=2, ensure_ascii=False))
+                    print("======================================\n")
+
             # Si enviarapi es True y se encontró el puesto, enviar al API externo
             if request.enviarapi and result.get("status") == "success":
                 data_records = result.get("data", [])
@@ -305,7 +315,7 @@ async def get_registraduria_data(request: PeticionRequest):
                     print(f"📤 Enviando puesto de votación al API externo...")
                     api_response = send_voting_place_to_external_api(request.nuip, voting_data)
                     result["api_externa"] = api_response
-            
+
             return result
             
         finally:
